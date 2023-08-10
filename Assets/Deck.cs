@@ -16,6 +16,12 @@ public class Deck : MonoBehaviour
 
     public SO_Card DrawCard()
     {
+        if (drawPile.Count == 0)
+        {
+            drawPile = discardPile;
+            discardPile.Clear();
+            ShuffleDrawPile();
+        }
         SO_Card cardDrawn = drawPile[0];
         drawPile.RemoveAt(0);
 
