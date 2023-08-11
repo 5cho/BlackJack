@@ -12,37 +12,38 @@ public class GameManager : MonoBehaviour
     public List<SO_Card> playerHand;
     public List<SO_Card> dealerHand;
 
-    public Transform playerHandLocation;
-    public Transform dealerHandLocation;
+    [SerializeField] private Transform playerHandLocation;
+    [SerializeField] private Transform dealerHandLocation;
     private Vector3 startingPlayerHandLocation = new Vector3();
     private Vector3 startingDealerHandLocation = new Vector3();
     private Vector3 cardOffset = new Vector3(0.02f, 0.01f, 0f);
 
 
-    public GameObject deckPrefab;
-    public Transform deckSpawnLocation;
-    public Transform cardSpawnLocation;
+    [SerializeField] private GameObject deckPrefab;
+    [SerializeField] private Transform deckSpawnLocation;
+    [SerializeField] private Transform cardSpawnLocation;
 
-    public TMP_Text betAmmountText;
-    public TMP_Text playerHandText;
-    public TMP_Text dealerHandText;
-    public GameObject placeBetUI;
-    public GameObject playTimeUI;
-    public GameObject gameOverUI;
-    public TMP_Text playerMoneyText;
-    public GameObject playerHandCanvas;
-    public GameObject dealerHandCanvas;
-    public TMP_Text winText;
-    public TMP_Text loseText;
-    public TMP_Text drawText;
-    public TMP_Text blackjackText;
-    public Button newGameButton;
+
+    [SerializeField] private TMP_Text betAmmountText;
+    [SerializeField] private TMP_Text playerHandText;
+    [SerializeField] private TMP_Text dealerHandText;
+    [SerializeField] private GameObject placeBetUI;
+    [SerializeField] private GameObject playTimeUI;
+    [SerializeField] private GameObject gameOverUI;
+    [SerializeField] private TMP_Text playerMoneyText;
+    [SerializeField] private GameObject playerHandCanvas;
+    [SerializeField] private GameObject dealerHandCanvas;
+    [SerializeField] private TMP_Text winText;
+    [SerializeField] private TMP_Text loseText;
+    [SerializeField] private TMP_Text drawText;
+    [SerializeField] private TMP_Text blackjackText;
+    [SerializeField] private Button newGameButton;
 
     private int playerHandValue;
     private int dealerHandValue;
 
-    private int playerMoney = 1000;
-    private int betAmmount;
+    public int playerMoney = 1000;
+    public int betAmmount;
 
     private bool isBetPlaced;
     private bool isTurnOver;
@@ -53,10 +54,13 @@ public class GameManager : MonoBehaviour
     private GameObject dealerHiddenCard;
     private SO_Card dealerHiddenCardSO;
 
+    private ChipsManager chipsManager;
+
     private void Awake()
     {
         startingDealerHandLocation = dealerHandLocation.position;
         startingPlayerHandLocation = playerHandLocation.position;
+        chipsManager = GetComponent<ChipsManager>();
     }
     private void Start()
     {
@@ -73,6 +77,7 @@ public class GameManager : MonoBehaviour
     {
         ResetHandLocations();
         await PlaceBet();
+        chipsManager.SpawnChipsBetAmmount();
         await DealStartingHand();
         ShowHands();
         if (playerHandValue == 21)
@@ -90,6 +95,7 @@ public class GameManager : MonoBehaviour
     }
     private async Task PlayerBlackjack()
     {
+        chipsManager.SpawnPlayerWinninigs();
         playerMoney = playerMoney + 3 * betAmmount;
         winText.gameObject.SetActive(true);
         blackjackText.gameObject.SetActive(true);
@@ -138,6 +144,7 @@ public class GameManager : MonoBehaviour
         drawText.gameObject.SetActive(false);
         blackjackText.gameObject.SetActive(false);
         newGameButton.gameObject.SetActive(false);
+        chipsManager.ClearChipsBetAmmount();
         CleanScene();
         NewHand();
     }
@@ -200,6 +207,7 @@ public class GameManager : MonoBehaviour
 
     private async void PlayerWon()
     {
+        chipsManager.SpawnPlayerWinninigs();
         playerMoney = playerMoney + 2 * betAmmount;
         winText.gameObject.SetActive(true);
         newGameButton.gameObject.SetActive(true);
@@ -215,7 +223,7 @@ public class GameManager : MonoBehaviour
 
     private async Task DealerTurn()
     {
-        RevealSecondCard();
+        await RevealSecondCard();
         bool isDealerTurnOver = false;
         while (!isDealerTurnOver)
         {
@@ -254,6 +262,8 @@ public class GameManager : MonoBehaviour
     {
         playerMoney -= betAmmount;
         betAmmount *= 2;
+        chipsManager.ClearChipsBetAmmount();
+        chipsManager.SpawnChipsBetAmmount();
         await DealToPlayer();
         CalculatePlayerHand(playerHand);
         playTimeUI.SetActive(false);
@@ -362,12 +372,16 @@ public class GameManager : MonoBehaviour
         await DealToPlayer();    
         await DealSecondCardToDealer();
     }
-    private void RevealSecondCard()
+    private async Task RevealSecondCard()
     {
-        dealerHiddenCard.GetComponent<Animation>().Play();
+        Animation animation = dealerHiddenCard.GetComponent<Animation>();
+        animation.Play();
+        while (animation.IsPlaying("RotateAnimation"))
+        {
+            await Task.Yield();
+        }
         dealerHand.Add(dealerHiddenCardSO);
         CalculateDealerHand(dealerHand);
-
     }
 
     private async Task DealToPlayer()
@@ -398,7 +412,7 @@ public class GameManager : MonoBehaviour
         Vector3 startPosition = card.transform.position;
         Vector3 goalPosition = targetPosition.position;
         float target = 1;
-        float speed = 1f;
+        float speed = 1.5f;
         float current = 0; 
 
         while (current < 1) 
@@ -415,7 +429,7 @@ public class GameManager : MonoBehaviour
         Vector3 startPosition = card.transform.position;
         Vector3 goalPosition = targetPosition.position;
         float target = 1;
-        float speed = 1f;
+        float speed = 1.5f;
         float current = 0;
 
         while (current < 1)
